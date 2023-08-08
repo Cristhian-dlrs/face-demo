@@ -27,7 +27,7 @@ def root_window():
 
     def on_assist():
 
-        result = confirm_user_assistance()
+        result = check_user_assistance()
         if result[0] is True:
             alert(root, f"Assistance confirmed for {result[1]}")
         else:
