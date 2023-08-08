@@ -1,5 +1,6 @@
 from tkinter import *
 from imageComparer import *
+from scripts import *
 
 
 def root_window():
@@ -44,5 +45,5 @@ def alert(root, msg, fg="green"):
     window.title("Alert")
     Label(window, text=msg, fg=fg).pack()
 
-
+on_init()
 root_window()
