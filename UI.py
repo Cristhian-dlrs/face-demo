@@ -7,6 +7,7 @@ def root_window():
     root.geometry("300x250")
     root.title("Assistance Tracker")
 
+    # Register --------------------------------------------------
     Label(text="Name * ").pack()
     name = StringVar()
     name_entry = Entry(textvariable=name)
@@ -15,6 +16,7 @@ def root_window():
     Label(text="").pack()
     Button(text="Register User", height="2", width="30",
            command=lambda: on_register()).pack()
+    # Register --------------------------------------------------
 
     Label(text="").pack()
     Button(text="Confirm Assistance", height="2",

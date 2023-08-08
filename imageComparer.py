@@ -10,7 +10,7 @@ CLOSE_CAM_KEY_ORD = 13  # key ord for close the camera (default is "enter")
 DATA_STORE = "attendance.json"
 IMAGES_DIRECTORY = os.path.join(os.getcwd(), "images")
 TMP_DIRECTORY = os.path.join(os.getcwd(), "tmp")
-THRESHOLD = .2
+ACCURACY_THRESHOLD = .2
 
 
 def register_user(username) -> None:
@@ -29,7 +29,8 @@ def confirm_user_assistance() -> [bool, str]:
         is_same_person = compare_images(image_path, attendee_image_path)
 
         if is_same_person:
-            username = image_path.split("/")[-1].replace(".jpg", "")
+            raw_image_path = r""+image_path
+            username = raw_image_path.split("\\")[-1].replace(".jpg", "")
             save_attendance(username)
             os.remove(attendee_image_path)
             return [True, username]
@@ -55,7 +56,8 @@ def compare_images(image_path_a, image_path_b) -> dict[str, any]:
         img1_path=image_path_a,
         img2_path=image_path_b, detector_backend="ssd")
 
-    if result['distance'] < THRESHOLD:
+    print(result)
+    if result['distance'] < ACCURACY_THRESHOLD:
         return True
     return False
 
@@ -87,4 +89,8 @@ if __name__ == '__main__':
     # register_user("Christian")
     # result = check_user_assistance()
     # print(result)
-    pass
+    path = r"C:\Users\cdelarosa\Desktop\face-demo\images\Chris.jpg"
+
+    raw_path = r"" + f"{path}"
+    name = raw_path.split("\\")[-1].replace(".jpg", "")
+    print(name)
