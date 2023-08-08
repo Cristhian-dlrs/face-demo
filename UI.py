@@ -26,10 +26,10 @@ def root_window():
         alert(root, "User Registered")
 
     def on_assist():
-        username = name.get()
-        result = check_user_assistance(username)
-        if result is True:
-            alert(root, "Assistance confirmed")
+
+        result = check_user_assistance()
+        if result[0] is True:
+            alert(root, f"Assistance confirmed for {result[1]}")
         else:
             alert(root, "Image comparison failed", "red")
 

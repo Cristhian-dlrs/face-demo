@@ -1,16 +1,17 @@
-from tkinter import *
 import cv2
-from matplotlib import pyplot
 from mtcnn.mtcnn import MTCNN as FaceDetector
+
 import json
 from datetime import date
+import os
 
 # --------------------------------- CONFIG ------------------------------- #
-CAMERA_INDEX = 1  # change depending on the machine
+CAMERA_INDEX = 0  # change depending on the machine
 CLOSE_CAM_KEY_ORD = 13  # key ord for close the camera (default is "enter")
-ACCURACY_THRESHOLD = 70  # change depending on the desired accuracy
-COMPARISON_RESULT_THRESHOLD = .85
+ACCURACY_THRESHOLD = 60  # change depending on the desired accuracy
+COMPARISON_RESULT_THRESHOLD = .90
 DATA_STORE = "attendance.json"
+FACES_DIRECTORY = os.path.join(os.getcwd(), "faces")
 
 
 def register_user(username):
@@ -18,18 +19,31 @@ def register_user(username):
     save_image(img, username)
 
 
-def check_user_assistance(username) -> bool:
+def check_user_assistance() -> [bool, str]:
     login_user_img = capture_image()
     login_user_face = crop_face_from_image(login_user_img)
-    actual_user_face = cv2.imread(f"faces/{username}.jpg")
-    comparison_result = compare_images(
-        actual_user_face, login_user_face) > COMPARISON_RESULT_THRESHOLD
+    registered_faces = load_registered_faces()
 
-    if comparison_result:
-        save_attendance(username)
-        return True
-    else:
-        return False
+    for face in registered_faces:
+        comparison_result = compare_images(
+            face[0], login_user_face) > COMPARISON_RESULT_THRESHOLD
+
+        print(f"{comparison_result}-->{face[1]}")
+        if comparison_result:
+            username = face[1].split("/")[-1].replace(".jpg", "")
+            save_attendance(username)
+            return [True, username]
+    return [False, ""]
+
+
+def load_registered_faces() -> list:
+    faces_path = os.listdir(FACES_DIRECTORY)
+    faces_full_path = map(lambda x: os.path.join(
+        FACES_DIRECTORY, x), faces_path)
+
+    registered_faces = map(
+        lambda path: [cv2.imread(path), path], faces_full_path)
+    return registered_faces
 
 
 def save_attendance(username):
@@ -86,13 +100,12 @@ def compare_images(faceA, faceB) -> bool:
 
     similar_regions = [i for i in matches if i.distance < ACCURACY_THRESHOLD]
     similarity_ratio = len(similar_regions)/len(matches)
-
+    print(similarity_ratio)
     return similarity_ratio
 
 
 # --------------------------------- TEST ------------------------------- #
-# if __name__ == '__main__':
-#     register_user("Christian")
-#     time.sleep(1)
-#     result = check_user_assistance("Christian")
-#     print(result)
+if __name__ == '__main__':
+    register_user("Christian")
+    result = check_user_assistance()
+    print(result)
