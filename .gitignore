@@ -1,1 +1,5 @@
-/images
+images
+tmp
+.vscode/*
+__pycache__/*
+*.json
