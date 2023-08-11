@@ -54,12 +54,12 @@ class ImageManager:
 
     def load_images(self) -> list[ImageMetadata]:
         directory_content = os.listdir(self._config.image_storage)
-        return map(lambda filename: ImageMetadata.from_filename(filename, directory_content))
+        return map(lambda filename: ImageMetadata.from_filename(filename), directory_content)
 
     def _save_image(self, imageMetadata: ImageMetadata, image: any) -> None:
         cv2.imwrite(imageMetadata.path, image)
 
-    def _delete_image(self, imageMetadata: ImageMetadata) -> None:
+    def delete_image(self, imageMetadata: ImageMetadata) -> None:
         if os.path.exists(imageMetadata.path):
             os.remove(imageMetadata.path)
 
@@ -93,4 +93,4 @@ class JsonPersister:
 
     def _write_file(self, path, data) -> None:
         with open(path, 'w') as file:
-            json.dump(data, file, indent=4)
+            json.dump(data, file, indent=2)
