@@ -5,7 +5,7 @@ from controller import *
 from gui import *
 
 # -----------------------------------------------------------------------------
-# Program settings
+# Config settings
 # -----------------------------------------------------------------------------
 
 IMAGES_DIRECTORY = "images"
@@ -15,6 +15,8 @@ TEMP_DIRECTORY = "tmp"
 
 
 def main():
+
+    # startup setup
     if not os.path.exists(IMAGES_DIRECTORY):
         os.makedirs(IMAGES_DIRECTORY)
 
@@ -29,9 +31,11 @@ def main():
         with open(USER_STORAGE_FILE, "w") as file:
             json.dump([], file, indent=4)
 
+    # Dependencies setup
     jsonPersister = JsonPersister(USER_STORAGE_FILE, ATTENDANCE_STORAGE_FILE)
-    imagePersister = ImagePersister(IMAGES_DIRECTORY, TEMP_DIRECTORY)
-    controller = Controller(jsonPersister, imagePersister)
+    image_config = ImageManagerConfig()
+    imagePersister = ImageManager(image_config)
+    controller = GuiController(jsonPersister, imagePersister)
     app = root_window(controller)
 
     app.mainloop()

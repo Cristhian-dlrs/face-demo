@@ -6,7 +6,7 @@ from controller import *
 # Main Window
 # -----------------------------------------------------------------------------
 
-def root_window(controller: Controller):
+def root_window(controller: GuiController):
     root = Tk()
     root.geometry("400x350")
     root.title("Assistance Tracker")
@@ -43,8 +43,9 @@ def root_window(controller: Controller):
     def on_assist():
 
         result = controller.confirm_attendance()
-        if result[0] is True:
-            alert(root, f"Assistance confirmed for {result[1]}")
+        if result.success:
+            alert(
+                root, f"Assistance confirmed for {result.payload.first_name} {result.payload.last_name}")
         else:
             alert(root, "Image comparison failed", "red")
 
