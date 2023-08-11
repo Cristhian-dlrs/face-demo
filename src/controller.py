@@ -1,5 +1,4 @@
 from uuid import uuid4
-import os
 from services import *
 from models import *
 
@@ -28,4 +27,4 @@ class GuiController:
                 return Result(True, user)
 
         self._image_manager.delete_image(attendee_image)
-        return Result(False, "")
+        return Result(False, None)

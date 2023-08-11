@@ -59,18 +59,13 @@ class Attendance:
         }
 
 
-class Image:
-    def __init__(self, path: str, data: any):
+class ImageMetadata:
+    def __init__(self, path: str):
         self._path = path
-        self._data = data
 
     @property
     def path(self):
         return self._path
-
-    @property
-    def data(self):
-        return self._data
 
     @property
     def id(self):
@@ -82,19 +77,19 @@ class Image:
             return self._path.split('/')[-1].replace('.jpg', '')
 
     @staticmethod
-    def from_filename(filename: str, data: any) -> 'Image':
+    def from_filename(filename: str) -> 'ImageMetadata':
         path = os.path.join("images", filename)
-        return Image(path, data)
+        return ImageMetadata(path)
 
     @staticmethod
-    def from_tmp_data(data: any) -> 'Image':
-        temp_path = os.path.join("tmp", str(uuid4())+".jpg")
-        return Image(temp_path, data)
-
-    @staticmethod
-    def from_user_id(user_id: str, data: any) -> 'Image':
+    def from_user_id(user_id: str) -> 'ImageMetadata':
         path = os.path.join("images", user_id+".jpg")
-        return Image(path, data)
+        return ImageMetadata(path)
+
+    @staticmethod
+    def from_tmp_data() -> 'ImageMetadata':
+        temp_path = os.path.join("tmp", str(uuid4())+".jpg")
+        return ImageMetadata(temp_path)
 
 
 class Result:

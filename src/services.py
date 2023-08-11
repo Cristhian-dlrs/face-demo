@@ -12,13 +12,15 @@ class ImageManager:
         self._config = config
 
     def register_image(self, user_id) -> None:
-        image = Image.from_user_id(user_id, self._get_camera_frame())
-        self.save_image(image)
+        image = self._get_camera_frame()
+        imageMetadata = ImageMetadata.from_user_id(user_id)
+        self._save_image(imageMetadata, image)
 
-    def capture_attendee_image(self) -> Image:
-        image = Image.from_tmp_data(self._get_camera_frame())
-        self.save_image(image)
-        return image
+    def capture_attendee_image(self) -> ImageMetadata:
+        image = self._get_camera_frame()
+        imageMetadata = ImageMetadata.from_tmp_data()
+        self._save_image(imageMetadata, image)
+        return imageMetadata
 
     def _get_camera_frame(self) -> any:
         videoCapture = cv2.VideoCapture(self._config.camera_index)
@@ -35,32 +37,31 @@ class ImageManager:
                 cv2.destroyAllWindows()
                 return frame
 
-    def compare_images(self, registered_user_image: Image, attendee_image: Image) -> Result:
+    def compare_images(self, registered_user_image: ImageMetadata, attendee_image: ImageMetadata) -> Result:
         result = DeepFace.verify(img1_path=registered_user_image.path,
                                  img2_path=attendee_image.path,
                                  detector_backend="ssd")
 
         if result['distance'] < self._config.comparison_threshold:
             return Result(True, registered_user_image.id)
-        return Result(False, "")
+        return Result(False, None)
 
-    def load_image(self, id: str) -> Image:
+    def load_image(self, id: str) -> ImageMetadata:
         filenames = os.listdir(self._config.image_storage)
         def by_id_in_filename(filename): return id in filename
         filename = next(filter(by_id_in_filename, filenames))
-        return Image.from_filename(filename, cv2.imread(filename))
+        return ImageMetadata.from_filename(filename)
 
-    def load_images(self) -> list[Image]:
+    def load_images(self) -> list[ImageMetadata]:
         directory_content = os.listdir(self._config.image_storage)
-        return map(lambda filename: Image.from_filename(filename, cv2.imread(
-            os.path.join(self._config.image_storage, filename))), directory_content)
+        return map(lambda filename: ImageMetadata.from_filename(filename, directory_content))
 
-    def save_image(self, image: Image) -> None:
-        cv2.imwrite(image.path, image.data)
+    def _save_image(self, imageMetadata: ImageMetadata, image: any) -> None:
+        cv2.imwrite(imageMetadata.path, image)
 
-    def delete_image(self, image: Image) -> None:
-        if os.path.exists(image.path):
-            os.remove(image.path)
+    def _delete_image(self, imageMetadata: ImageMetadata) -> None:
+        if os.path.exists(imageMetadata.path):
+            os.remove(imageMetadata.path)
 
 
 class JsonPersister:
@@ -85,10 +86,10 @@ class JsonPersister:
         attendance_list.append(attendance.to_json())
         self._write_file(self._attendance_storage_path, attendance_list)
 
-    def _read_file(self, path) -> any:
+    def _read_file(self, path) -> Result:
         with open(path, 'r') as file:
             data = json.load(file)
-        return data
+            return data
 
     def _write_file(self, path, data) -> None:
         with open(path, 'w') as file:
