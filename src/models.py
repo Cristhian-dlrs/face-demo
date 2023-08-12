@@ -107,21 +107,33 @@ class Result:
         return self._payload
 
 
-class ImageManagerConfig:
+class Configuration:
 
     def __init__(self,
+                 cascade_classifier_model_path: str,
                  comparison_threshold=.2,
                  camera_index=0,
                  close_key=13,
                  window_title="Facial Recognition",
                  tmp_storage="tmp",
-                 image_storage="images"):
+                 image_storage="images",
+                 default_tag="..."):
+        self._cascade_classifier_model_path = cascade_classifier_model_path
         self._comparison_threshold = comparison_threshold
         self._camera_index = camera_index
         self._close_key = close_key
         self._window_title = window_title
         self._tmp_storage = tmp_storage
         self._image_storage = image_storage
+        self._default_tag = default_tag
+
+    @property
+    def default_tag(self):
+        return self._default_tag
+
+    @property
+    def cascade_classifier_model_path(self) -> str:
+        return self._cascade_classifier_model_path
 
     @property
     def comparison_threshold(self) -> float:
