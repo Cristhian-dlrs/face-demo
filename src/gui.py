@@ -1,86 +1,63 @@
-import pathlib
 from tkinter import *
 from controller import *
-import cv2
 
 
 # -----------------------------------------------------------------------------
 # Main Window
 # -----------------------------------------------------------------------------
-# def root_window(controller: GuiController):
-cascade_path = pathlib.Path(cv2.__file__).parent.absolute(
-) / "data/haarcascade_frontalface_default.xml"
 
-clf = cv2.CascadeClassifier(str(cascade_path))
-
-
-def root_window():
+def root_window(controller: GuiController):
     root = Tk()
-    config = Configuration(str(cascade_path))
-    root.minsize = (650, 550)
-    root.maxsize = (650, 550)
-
+    root.geometry("400x350")
     root.title("Assistance Tracker")
 
-    panel = None
+    Label(text="First Name * ").pack()
+    first_name = StringVar()
+    first_name_entry = Entry(textvariable=first_name)
+    first_name_entry.pack()
 
-    # return root
-    # -------------------Demo Cam----------------------
-    f1 = LabelFrame(root, bg="red")
-    f1.pack()
-    l1 = Label(f1, bg="red", width=650, height=500)
-    l1.pack(side="left", padx=10, pady=10)
+    Label(text="Last Name * ").pack()
+    last_name = StringVar()
+    last_name_entry = Entry(textvariable=last_name)
+    last_name_entry.pack()
 
-    Button(root, text="Register User").pack(
-        side="bottom", fill="both", expand="yes", padx=10, pady=10)
+    Label(text="Email * ").pack()
+    email = StringVar()
+    email_entry = Entry(textvariable=email)
+    email_entry.pack()
 
-    detected = 0
-    videoCapture = cv2.VideoCapture(config.camera_index)
-    while (detected != 200):
-        detected += 1
-        print(detected)
-        frame = videoCapture.read()[1]
-        reflected_frame = cv2.flip(frame, 1)
-        faces = clf.detectMultiScale(
-            reflected_frame,
-            scaleFactor=1.1,
-            minNeighbors=5,
-            minSize=(30, 30),
-            flags=cv2.CASCADE_SCALE_IMAGE
-        )
+    Label(text="").pack()
+    Button(text="Register User", height="2", width="30",
+           command=lambda: on_register()).pack()
 
-        if len(faces) > 1:
-            detected = True
+    Label(text="").pack()
+    Button(text="Confirm Assistance", height="2",
+           width="30", command=lambda: on_assist()).pack()
 
-        for (x, y, width, height) in faces:
-            if detected:
-                cv2.rectangle(reflected_frame, (x, y), (x+width, y+height),
-                              (0, 255, 0), 2)
+    def on_register():
+        controller.register_user(first_name_entry.get(),
+                                 last_name_entry.get(),
+                                 email_entry.get())
+        alert(root, "User Registered")
 
-                cv2.putText(reflected_frame, 'Christian', (x, y-20), 2,
-                            0.8, (0, 255, 0), 1, cv2.LINE_AA)
+    def on_assist():
 
-            if not detected:
-                cv2.rectangle(reflected_frame, (x, y), (x+width, y+height),
-                              (255, 255, 0), 2)
+        result = controller.confirm_attendance()
+        if result.success:
+            alert(
+                root, f"Assistance confirmed for {result.payload.first_name} {result.payload.last_name}")
+        else:
+            alert(root, "Image comparison failed", "red")
 
-                cv2.putText(reflected_frame, 'Registering...', (x, y-20), 2,
-                            0.8, (255, 255, 0), 1, cv2.LINE_AA)
-
-        colorized_frame = cv2.cvtColor(reflected_frame, cv2.COLOR_BGR2RGB)
-        image_display = ImageTk.PhotoImage(Image.fromarray(colorized_frame))
-        l1['image'] = image_display
-        root.update()
+    return root
 
 
 # -----------------------------------------------------------------------------
 # Components
 # -----------------------------------------------------------------------------
 
-# def alert(root, msg, fg="green"):
-#     window = Toplevel(root)
-#     window.geometry("300x250")
-#     window.title("Alert")
-#     Label(window, text=msg, fg=fg).pack()
-if __name__ == "__main__":
-    root_window()
+def alert(root, msg, fg="green"):
+    window = Toplevel(root)
+    window.geometry("300x250")
+    window.title("Alert")
+    Label(window, text=msg, fg=fg).pack()

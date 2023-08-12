@@ -1,74 +1,14 @@
 import json
 import os
-from tkinter import PhotoImage
 import cv2
 from deepface import DeepFace
-from PIL import Image, ImageTk
+from datetime import date
 from models import *
 
 
-class ImageManager():
+class ImageManager:
 
-    def __init__(self, config: Configuration):
-        self._config = config
-        self._classifier = cv2.CascadeClassifier(
-            config.cascade_classifier_model_path)
-
-    def compare_images(self, registered_user_image: ImageMetadata, attendee_image: ImageMetadata) -> Result:
-        result = DeepFace.verify(img1_path=registered_user_image.path,
-                                 img2_path=attendee_image.path,
-                                 detector_backend="ssd")
-
-        if result['distance'] < self._config.comparison_threshold:
-            return Result(True, registered_user_image.id)
-        return Result(False, None)
-
-    def capture_image(self) -> PhotoImage:
-        detected = False
-        count = 0
-        videoCapture = cv2.VideoCapture(self._config.camera_index)
-        while (True):
-            count += 1
-            frame = videoCapture.read()[self._config.camera_index]
-            reflected_frame = cv2.flip(frame, 1)
-            faces = self._detect_faces(reflected_frame)
-
-            if len(faces):
-                detected = True
-
-                self._tag_faces(reflected_frame, faces[0])
-
-            colorized_frame = cv2.cvtColor(reflected_frame, cv2.COLOR_BGR2RGB)
-            display_frame = ImageTk.PhotoImage(
-                Image.fromarray(colorized_frame))
-            return display_frame
-
-    def _detect_faces(self, frame) -> any:
-        return self._classifier.detectMultiScale(
-            frame,
-            scaleFactor=1.1,
-            minNeighbors=5,
-            minSize=(30, 30),
-            flags=cv2.CASCADE_SCALE_IMAGE
-        )
-
-    def _tag_face(self, image, face, tag=None) -> None:
-        (x, y, width, height) = face
-        color = None
-
-        if len(tag):
-            color = (0, 255, 0)
-            tag = self._config.default_tag
-        else:
-            color = (255, 255, 0)
-
-        cv2.rectangle(image, (x, y), (x+width, y+height), color, 2)
-        cv2.putText(image, tag, (x, y-20), 2, 0.8, color, 1, cv2.LINE_AA)
-
-
-class ImagePersister:
-
-    def __init__(self, config: Configuration):
+    def __init__(self, config: ImageManagerConfig):
         self._config = config
 
     def register_image(self, user_id) -> None:
@@ -81,6 +21,30 @@ class ImagePersister:
         imageMetadata = ImageMetadata.from_tmp_data()
         self._save_image(imageMetadata, image)
         return imageMetadata
+
+    def _get_camera_frame(self) -> any:
+        videoCapture = cv2.VideoCapture(self._config.camera_index)
+        while (True):
+            ret, frame = videoCapture.read()
+            if ret is False:
+                videoCapture.release()
+                cv2.destroyAllWindows()
+                return frame
+
+            cv2.imshow(self._config.window_title, frame)
+            if cv2.waitKey(1) == self._config.close_key:
+                videoCapture.release()
+                cv2.destroyAllWindows()
+                return frame
+
+    def compare_images(self, registered_user_image: ImageMetadata, attendee_image: ImageMetadata) -> Result:
+        result = DeepFace.verify(img1_path=registered_user_image.path,
+                                 img2_path=attendee_image.path,
+                                 detector_backend="ssd")
+
+        if result['distance'] < self._config.comparison_threshold:
+            return Result(True, registered_user_image.id)
+        return Result(False, None)
 
     def load_image(self, id: str) -> ImageMetadata:
         filenames = os.listdir(self._config.image_storage)
