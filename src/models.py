@@ -6,11 +6,8 @@ from uuid import uuid4
 
 
 class User():
-    def __init__(self, first_name: str, last_name: str, email: str, id=None):
-        if id is None:
-            self._id = hash((first_name, last_name, email))
-        else:
-            self._id = id
+    def __init__(self, first_name: str, last_name: str, email: str,):
+        self._id = hash((first_name, last_name, email))
         self._first_name = first_name
         self._last_name = last_name
         self._email = email
@@ -45,8 +42,7 @@ class User():
     def from_json(json_data: dict) -> 'User':
         return User(json_data["first_name"],
                     json_data["last_name"],
-                    json_data["email"],
-                    json_data["id"])
+                    json_data["email"])
 
     def to_json(self) -> str:
         return {
