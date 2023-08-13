@@ -1,4 +1,4 @@
 # TODO
 
-- Improve Gui
-- Add error handling
+- Add styles and better layout to Gui
+- Add requirement.txt with dependencies
