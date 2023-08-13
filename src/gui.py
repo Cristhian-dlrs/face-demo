@@ -28,35 +28,36 @@ class GUI:
 
     def run(self):
         self._configure_root()
-        time.sleep(SCREEN_WARMUP_TIME)
         self._start_recording()
 
     def _configure_root(self):
-        self._root.geometry(ROOT_GEOMETRY)
         self._root.title(MAIN_WINDOW_TITLE)
+        self._root.geometry(ROOT_GEOMETRY)
+        self._root.resizable(FALSE, FALSE)
 
-        label_frame = LabelFrame(self._root, bg="blue")
-        label_frame.pack()
-
-        self._panel = Label(label_frame, bg="blue", width=650, height=500)
-        self._panel.pack(side="top", padx=2, pady=2)
-
-        attendance_btn = Button(self._root,
-                                text=ATTENDANCE_BTN_LABEL,
-                                height="2",
-                                width="30",
-                                command=lambda: self.handle_register_attendance())
-        attendance_btn.pack(side="left")
+        self._panel = Label(self._root, bg="blue",
+                            width=IMG_PANEL_WIDTH, height=IMG_PANEL_HEIGHT)
+        self._panel.pack(side="top", padx="20")
 
         attendance_btn = Button(self._root,
                                 text=REGISTER_USER_BTN_LABEL,
                                 height="2",
                                 width="30",
+                                bg="blue",
                                 command=lambda: self.handle_register_user())
-        attendance_btn.pack(side="right")
+        attendance_btn.pack(side="left", pady="10", padx="20")
+
+        attendance_btn = Button(self._root,
+                                text=ATTENDANCE_BTN_LABEL,
+                                height="2",
+                                width="30",
+                                bg="green",
+                                command=lambda: self.handle_register_attendance())
+        attendance_btn.pack(side="right", pady="10", padx="20")
 
     def _start_recording(self):
         videoCapture = cv2.VideoCapture(CAMERA_INDEX)
+        time.sleep(CAMERA_WARMUP_TIME)
         while (True):
             frame = videoCapture.read()[1]
             frame = cv2.flip(frame, 1)
@@ -93,6 +94,7 @@ class GUI:
 def register_form(root, image, callback):
     window = Toplevel(root)
     window.geometry(FORM_GEOMETRY)
+    window.resizable(False, False)
     window.title(FORM_WINDOW_TITLE)
 
     def on_register_user():
@@ -124,4 +126,4 @@ def register_form(root, image, callback):
 
     Label(window, text="").pack()
     Button(window, text=REGISTER_USER_BTN_LABEL, height="2", width="30",
-           command=lambda: on_register_user()).pack()
+           command=lambda: on_register_user()).pack(pady="10", padx="50")
