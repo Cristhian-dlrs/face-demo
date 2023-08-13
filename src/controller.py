@@ -8,23 +8,31 @@ class GuiController:
         self._json_persister = json_persister
         self._image_manager = image_manager
 
-    def register_user(self, first_name: str, last_name: str, email: str) -> None:
-        new_user = User(uuid4(), first_name, last_name, email)
-        self._image_manager.register_image(new_user.id)
-        self._json_persister.save_user(new_user)
+    def register_user(self, first_name: str, last_name: str, email: str, image: any) -> Result:
+        try:
+            new_user = User(first_name, last_name, email)
+            user_image = ImageMetadata.from_user(new_user, image)
+            self._image_manager.save_image(user_image)
+            self._json_persister.save_user(new_user)
+            return Result(True, f"{USER_REGISTRATION_SUCCESS_MESSAGE} {new_user.first_name} {new_user.last_name}")
 
-    def confirm_attendance(self) -> Result:
-        attendee_image = self._image_manager.capture_attendee_image()
-        registered_user_images = self._image_manager.load_images()
-        for registered_user_image in registered_user_images:
-            comparison = self._image_manager.compare_images(
-                registered_user_image, attendee_image)
+        except Exception as e:
+            print(e.with_traceback())
+            return Result(True, USER_REGISTRATION_ERROR_MESSAGE)
+
+    def confirm_attendance(self, image: any) -> Result:
+        try:
+            attendee_image = ImageMetadata.from_tmp_image(image)
+            comparison = self._image_manager.compare_with_registered_images(
+                attendee_image)
 
             if comparison.success:
                 user = self._json_persister.load_user(comparison.payload)
                 self._json_persister.save_attendance(user)
-                self._image_manager.delete_image(attendee_image)
-                return Result(True, user)
+                return Result(True, f"{ATTENDANCE_CONFIRMED_SUCCESS_MESSAGE} {user.first_name} {user.last_name}")
 
-        self._image_manager.delete_image(attendee_image)
-        return Result(False, None)
+            return Result(False, ATTENDANCE_CONFIRMATION_FAILED_MESSAGE)
+
+        except Exception as e:
+            print(e.with_traceback())
+            return Result(False, ATTENDANCE_CONFIRMATION_ERROR_MESSAGE)

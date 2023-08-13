@@ -2,95 +2,86 @@ import json
 import os
 import cv2
 from deepface import DeepFace
-from datetime import date
 from models import *
+from config import *
+
+
+import time
 
 
 class ImageManager:
 
-    def __init__(self, config: ImageManagerConfig):
-        self._config = config
+    def compare_with_registered_images(self, attendee_image: ImageMetadata) -> Result:
+        self.save_image(attendee_image)
+        registered_user_images = self.load_images()
+        for registered_user_image in registered_user_images:
+            comparison = self._compare_images(
+                registered_user_image, attendee_image)
 
-    def register_image(self, user_id) -> None:
-        image = self._get_camera_frame()
-        imageMetadata = ImageMetadata.from_user_id(user_id)
-        self._save_image(imageMetadata, image)
+            if comparison.success:
+                self._delete_image(attendee_image)
+                return Result(True, comparison.payload)
 
-    def capture_attendee_image(self) -> ImageMetadata:
-        image = self._get_camera_frame()
-        imageMetadata = ImageMetadata.from_tmp_data()
-        self._save_image(imageMetadata, image)
-        return imageMetadata
+        self._delete_image(attendee_image)
+        return Result(False, None)
 
-    def _get_camera_frame(self) -> any:
-        videoCapture = cv2.VideoCapture(self._config.camera_index)
-        while (True):
-            ret, frame = videoCapture.read()
-            if ret is False:
-                videoCapture.release()
-                cv2.destroyAllWindows()
-                return frame
-
-            cv2.imshow(self._config.window_title, frame)
-            if cv2.waitKey(1) == self._config.close_key:
-                videoCapture.release()
-                cv2.destroyAllWindows()
-                return frame
-
-    def compare_images(self, registered_user_image: ImageMetadata, attendee_image: ImageMetadata) -> Result:
+    def _compare_images(self, registered_user_image: ImageMetadata, attendee_image: ImageMetadata) -> Result:
         result = DeepFace.verify(img1_path=registered_user_image.path,
                                  img2_path=attendee_image.path,
                                  detector_backend="ssd")
 
-        if result['distance'] < self._config.comparison_threshold:
+        if result['distance'] < COMPARISON_THRESHOLD:
             return Result(True, registered_user_image.id)
         return Result(False, None)
 
-    def load_image(self, id: str) -> ImageMetadata:
-        filenames = os.listdir(self._config.image_storage)
-        def by_id_in_filename(filename): return id in filename
-        filename = next(filter(by_id_in_filename, filenames))
-        return ImageMetadata.from_filename(filename)
-
     def load_images(self) -> list[ImageMetadata]:
-        directory_content = os.listdir(self._config.image_storage)
+        directory_content = os.listdir(IMAGES_DIRECTORY)
         return map(lambda filename: ImageMetadata.from_filename(filename), directory_content)
 
-    def _save_image(self, imageMetadata: ImageMetadata, image: any) -> None:
-        cv2.imwrite(imageMetadata.path, image)
+    def save_image(self, image: ImageMetadata) -> None:
+        cv2.imwrite(image.path, image.content)
 
-    def delete_image(self, imageMetadata: ImageMetadata) -> None:
-        if os.path.exists(imageMetadata.path):
-            os.remove(imageMetadata.path)
+    def _delete_image(self, image: ImageMetadata) -> None:
+        if os.path.exists(image.path):
+            os.remove(image.path)
 
 
 class JsonPersister:
 
-    def __init__(self, user_storage_path, attendance_storage_path):
-        self._user_storage_path = user_storage_path
-        self._attendance_storage_path = attendance_storage_path
-
     def save_user(self, user: User) -> None:
-        users_list = self._read_file(self._user_storage_path)
+        users_list = self._read_file(USERS_STORAGE)
         users_list.append(user.to_json())
-        self._write_file(self._user_storage_path, users_list)
+        self._write_file(USERS_STORAGE, users_list)
 
     def load_user(self, id: str) -> User:
-        users_list = self._read_file(self._user_storage_path)
+        users_list = self._read_file(USERS_STORAGE)
         json_user = (next(filter(lambda user: user["id"] == id, users_list)))
         return User.from_json(json_user)
 
     def save_attendance(self, user: User) -> None:
         attendance = Attendance(user)
-        attendance_list = self._read_file(self._attendance_storage_path)
+        attendance_list = self._read_file(ATTENDANCE_STORAGE)
         attendance_list.append(attendance.to_json())
-        self._write_file(self._attendance_storage_path, attendance_list)
+        self._write_file(ATTENDANCE_STORAGE, attendance_list)
 
-    def _read_file(self, path) -> Result:
+    def _read_file(self, path) -> any:
         with open(path, 'r') as file:
             data = json.load(file)
             return data
 
     def _write_file(self, path, data) -> None:
         with open(path, 'w') as file:
-            json.dump(data, file, indent=2)
+            uniq_data = self._ensure_no_duplications(data, path)
+            json.dump(uniq_data, file, indent=2)
+
+    def _ensure_no_duplications(self, data, path):
+        if path == USERS_STORAGE:
+            users_list = list(map(lambda user: User.from_json(user), data))
+            users_set = set(users_list)
+            return list(map(lambda user: user.to_json(), users_set))
+
+        if path == ATTENDANCE_STORAGE:
+            attendance_list = list(
+                map(lambda attendance: Attendance.from_json(attendance), data))
+            attendance_set = set(attendance_list)
+            return list(map(lambda attendance: attendance.to_json(), attendance_set))
