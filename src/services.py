@@ -29,7 +29,6 @@ class ImageManager:
         result = DeepFace.verify(img1_path=registered_user_image.path,
                                  img2_path=attendee_image.path,
                                  detector_backend="ssd")
-
         if result['distance'] < COMPARISON_THRESHOLD:
             return Result(True, registered_user_image.id)
         return Result(False, None)
@@ -72,7 +71,7 @@ class JsonPersister:
     def _write_file(self, path, data) -> None:
         with open(path, 'w') as file:
             uniq_data = self._ensure_no_duplications(data, path)
-            json.dump(uniq_data, file, indent=2)
+            json.dump(uniq_data, file, indent=JSON_IDENT)
 
     def _ensure_no_duplications(self, data, path):
         if path == USERS_STORAGE:
